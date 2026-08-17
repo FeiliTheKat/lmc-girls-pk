@@ -32,8 +32,8 @@ import {
   isRedemptionDone,
   pickRedemptionWinner,
 } from './redemption';
-import { createCard, isMuted, setMuted, showToast, stopActiveClip } from './card';
-import { setBgmMuted, skipToNextTrack } from './bgm';
+import { createCard, showToast, stopActiveClip } from './card';
+import { isBgmMuted, setBgmMuted, skipToNextTrack, startBgm } from './bgm';
 import { preloader } from './preload';
 
 // 选手库只有 40 位，64/128 目前凑不满，不放出来选——库存够了再加回去
@@ -232,14 +232,13 @@ function topbar(): HTMLElement {
   brand.addEventListener('click', () => go('home'));
   bar.appendChild(brand);
 
-  // 全局静音开关：同时控制选手视频片段的音量和背景音乐，只有一个开关，
-  // 不搞两套互相独立的静音状态（见 bgm.ts 顶部注释）。加了 sound-toggle 类
-  // 是因为迷你播放器的暂停/播放键控制的是同一个状态，两个按钮点击后要互相
-  // 同步文字，见 syncSoundControls()
-  const sound = el('button', 'btn btn-secondary btn-sm sound-toggle', isMuted() ? '🔇 静音' : '🔊 有声');
+  // 静音开关：只管 BGM 自己，不影响选手视频片段的音量（2026-08-17 产品
+  // 所有者明确要求拆开，见 bgm.ts 顶部注释）。加了 sound-toggle 类是因为
+  // 迷你播放器的暂停/播放键控制的是同一个 BGM 静音状态，两个按钮点击后
+  // 要互相同步文字，见 syncSoundControls()
+  const sound = el('button', 'btn btn-secondary btn-sm sound-toggle', isBgmMuted() ? '🔇 静音' : '🔊 有声');
   sound.addEventListener('click', () => {
-    setMuted(!isMuted());
-    setBgmMuted(isMuted());
+    setBgmMuted(!isBgmMuted());
     syncSoundControls();
   });
   bar.appendChild(sound);
@@ -271,23 +270,20 @@ function topbar(): HTMLElement {
 }
 
 /**
- * 顶栏迷你 BGM 播放器：暂停/播放 + 切歌两颗图标按钮，不显示曲名。暂停按钮
- * 复用的还是那唯一一个全局静音状态（isMuted/setMuted/setBgmMuted）——没有
- * 另建一个"只暂停音乐、不影响选手视频音量"的独立状态。以前这个项目确实
- * 单独做过一颗 BGM 专属暂停键，后来产品所有者主动要求合并回统一开关，理由
- * 是两套独立的声音状态互相打架、容易把用户搞糊涂（见 PRD.md §六·21）——这里
- * 不重蹈那条覆辙，只是把同一个开关也摆进迷你播放器里、换成播放器味儿更足
- * 的 ⏸/▶ 图标，点哪颗按钮都会通过 syncSoundControls() 互相同步文字。
+ * 顶栏迷你 BGM 播放器：暂停/播放 + 切歌两颗图标按钮，不显示曲名。这两颗
+ * 按钮、以及上面顶栏那颗"🔊 有声 / 🔇 静音"，控制的都是 bgm.ts 自己的
+ * 静音状态（isBgmMuted/setBgmMuted）——**只影响 BGM，不碰选手视频片段的
+ * 音量**（2026-08-17 产品所有者明确要求拆开：见 bgm.ts 头部注释）。三颗
+ * 按钮点任意一个都会通过 syncSoundControls() 互相同步文字。
  */
 function bgmPlayer(): HTMLElement {
   const wrap = el('div', 'bgm-player');
 
-  const pause = el('button', 'btn btn-secondary btn-sm bgm-pause-btn', isMuted() ? '▶' : '⏸');
+  const pause = el('button', 'btn btn-secondary btn-sm bgm-pause-btn', isBgmMuted() ? '▶' : '⏸');
   pause.type = 'button';
-  pause.setAttribute('aria-label', isMuted() ? '继续播放背景音乐' : '暂停背景音乐');
+  pause.setAttribute('aria-label', isBgmMuted() ? '继续播放背景音乐' : '暂停背景音乐');
   pause.addEventListener('click', () => {
-    setMuted(!isMuted());
-    setBgmMuted(isMuted());
+    setBgmMuted(!isBgmMuted());
     syncSoundControls();
   });
   wrap.appendChild(pause);
@@ -301,16 +297,16 @@ function bgmPlayer(): HTMLElement {
   return wrap;
 }
 
-/** 顶栏"🔊 有声 / 🔇 静音"按钮和迷你播放器的暂停/播放按钮控制的是同一个全局
- *  状态，点任意一个之后都要把另一个的文字也刷新过来，不然两颗按钮会显示
- *  不一致的状态 */
+/** 顶栏"🔊 有声 / 🔇 静音"按钮和迷你播放器的暂停/播放按钮控制的是同一个
+ *  BGM 静音状态，点任意一个之后都要把另一个的文字也刷新过来，不然两颗
+ *  按钮会显示不一致的状态 */
 function syncSoundControls(): void {
   const sound = document.querySelector<HTMLElement>('.sound-toggle');
-  if (sound) sound.textContent = isMuted() ? '🔇 静音' : '🔊 有声';
+  if (sound) sound.textContent = isBgmMuted() ? '🔇 静音' : '🔊 有声';
   const pause = document.querySelector<HTMLElement>('.bgm-pause-btn');
   if (pause) {
-    pause.textContent = isMuted() ? '▶' : '⏸';
-    pause.setAttribute('aria-label', isMuted() ? '继续播放背景音乐' : '暂停背景音乐');
+    pause.textContent = isBgmMuted() ? '▶' : '⏸';
+    pause.setAttribute('aria-label', isBgmMuted() ? '继续播放背景音乐' : '暂停背景音乐');
   }
 }
 
@@ -338,17 +334,16 @@ function viewSplash(main: HTMLElement): void {
   wrap.appendChild(bgFull);
 
   // 开始页没有顶栏（见 render()），但音乐已经在放了——常驻一个小的静音键，
-  // 不用先点进首页才能关掉背景音乐。和顶栏那颗按钮共用同一套全局状态
-  // （card.ts 的 isMuted/setMuted + bgm.ts 的 setBgmMuted），不是独立开关
+  // 不用先点进首页才能关掉背景音乐。和顶栏那颗按钮共用同一套 BGM 静音状态
+  // （bgm.ts 的 isBgmMuted/setBgmMuted），只影响 BGM，不碰选手视频片段
   const mute = el('button', 'splash-mute');
   mute.type = 'button';
-  mute.setAttribute('aria-label', isMuted() ? '取消静音' : '静音');
-  mute.innerHTML = isMuted() ? '🔇' : '🔊';
+  mute.setAttribute('aria-label', isBgmMuted() ? '取消静音' : '静音');
+  mute.innerHTML = isBgmMuted() ? '🔇' : '🔊';
   mute.addEventListener('click', () => {
-    setMuted(!isMuted());
-    setBgmMuted(isMuted());
-    mute.innerHTML = isMuted() ? '🔇' : '🔊';
-    mute.setAttribute('aria-label', isMuted() ? '取消静音' : '静音');
+    setBgmMuted(!isBgmMuted());
+    mute.innerHTML = isBgmMuted() ? '🔇' : '🔊';
+    mute.setAttribute('aria-label', isBgmMuted() ? '取消静音' : '静音');
   });
   wrap.appendChild(mute);
 
@@ -1239,17 +1234,17 @@ async function boot(): Promise<void> {
   // 到那一步，跳过开始页——刷新页面/关掉标签页不该让整场比赛清零
   if (restoreCup()) {
     render();
-    setBgmMuted(isMuted());
+    startBgm();
     return;
   }
 
   render();
 
-  // 开始页：挂载即尝试播放背景音乐（除非用户之前设过全局静音；自动播放
+  // 开始页：挂载即尝试播放背景音乐（除非用户之前设过 BGM 静音；自动播放
   // 被拦截时的兜底见 bgm.ts 注释），同时后台预加载「人气」16 位的片段，
   // 加载完才允许点开始游戏（DESIGN.md §9）
   if (app.view === 'splash') {
-    setBgmMuted(isMuted());
+    startBgm();
     void startSplashPreload();
   }
 }
