@@ -1,0 +1,18 @@
+{
+  "name": "monkey-girl-cup",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "assets:thumbs": "node scripts/gen-placeholders.mjs",
+    "assets:transcode": "node scripts/transcode.mjs",
+    "assets:blur-thumbs": "node scripts/gen-blur-thumbs.mjs"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "vite": "^6.0.7"
+  }
+}

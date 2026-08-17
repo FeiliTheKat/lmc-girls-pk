@@ -1,0 +1,1575 @@
+/* ============================================================
+   猴女郎巅峰对决 — 全部数值取自 DESIGN.md（Liquid Glass 视觉体系版）
+   改样式请先改那份文档，这里只是把 token 落成 CSS
+   ============================================================ */
+
+:root {
+  /* 背景：深紫黑渐变阶 + 光晕，见 DESIGN.md §2/§5 */
+  --bg-void: #05030b;
+  --bg-deep: #0d0620;
+  --bg-base: #150c2e;
+  --bg-mid: #241246;
+  --bg-glow-violet: rgba(138, 92, 246, 0.35);
+  --bg-glow-magenta: rgba(190, 64, 180, 0.22);
+
+  /* 玻璃表面：Liquid Glass 核心 token */
+  --glass-blur: 15px;
+  --glass-blur-lg: 28px;
+  --glass-saturate: 180%;
+  --glass-fill: rgba(255, 255, 255, 0.07);
+  --glass-fill-strong: rgba(255, 255, 255, 0.13);
+  --glass-border: rgba(255, 255, 255, 0.2);
+  --glass-border-bright: rgba(255, 255, 255, 0.62);
+  --glass-shadow: 0 12px 40px rgba(5, 2, 15, 0.55);
+
+  /* 文字 */
+  --text-primary: #ffffff;
+  --text-secondary: #c3b8e0;
+  --text-near-white: #e7e0f7;
+  --text-bright: #fdfdff;
+  --text-on-accent: #0d0620;
+
+  /* 口音（Spotify 绿，唯一功能色，理由见 DESIGN.md §1） */
+  --accent: #1ed760;
+  --accent-border: #1db954;
+  --accent-wash: rgba(30, 215, 96, 0.16);
+  --accent-glow: rgba(30, 215, 96, 0.45);
+
+  /* 冠军金（延续上一版的偏离说明） */
+  --gold: #f5c542;
+  --gold-wash: rgba(245, 197, 66, 0.14);
+  --gold-glow: rgba(245, 197, 66, 0.45);
+
+  /* 语义 */
+  --danger: #f3727f;
+  --warning: #ffa42b;
+  --info: #7ab8ff;
+
+  /* 圆角阶 */
+  --r-badge: 2px;
+  --r-xs: 4px;
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 24px;
+  --r-pill: 500px;
+  --r-circle: 50%;
+
+  /* 间距 */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --sp-16: 64px;
+  --sp-section: clamp(3rem, 8vw, 6rem);
+
+  /* 容器 */
+  --w-page: 1280px;
+  --w-match: 880px;
+  --w-prose: 560px;
+
+  /* z-index 契约（DESIGN.md §5） */
+  --z-sticky: 100;
+  --z-overlay: 200;
+  --z-modal: 300;
+  --z-toast: 500;
+
+  /* 动效 */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-tap: 120ms;
+  --dur-hover: 200ms;
+  --dur-state: 220ms;
+  --dur-move: 320ms;
+  --dur-morph: 480ms;
+  --dur-page: 300ms;
+  --dur-reveal: 900ms;
+
+  /* 字体：2026-08-17 起分成两层。正文/按钮/卡片/数字这些跑量的地方统一用
+     本地系统自带的微软雅黑——不占一次 CDN 请求，全平台稳定可用，笔画规整，
+     小字号下也不会像装饰字那样看着"糊"。只有站名/大标题（--font-title）
+     还留着站酷高端黑（zcool-gdh，见 index.html 的 ZeoSeven CDN 引入）撑门面，
+     用量小，CDN 一次没到位也有兜底 */
+  --font-sans: 'Microsoft YaHei', 'Microsoft YaHei UI', 'PingFang SC', 'HarmonyOS Sans SC',
+    'Noto Sans SC', 'Helvetica Neue', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Meiryo',
+    'MS Gothic', system-ui, 'Segoe UI', Roboto, Arial, sans-serif;
+  --font-title: 'zcool-gdh', 'Microsoft YaHei', 'Microsoft YaHei UI', 'PingFang SC',
+    'HarmonyOS Sans SC', 'Noto Sans SC', system-ui, sans-serif;
+  --font-num: var(--font-sans);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+body {
+  /* 页面级背景渐变：唯一的不透明大色块，所有玻璃表面叠在它上面（DESIGN.md §5） */
+  background:
+    radial-gradient(ellipse 80% 50% at 20% -10%, var(--bg-glow-violet), transparent 60%),
+    radial-gradient(ellipse 60% 40% at 90% 10%, var(--bg-glow-magenta), transparent 55%),
+    linear-gradient(180deg, var(--bg-deep) 0%, var(--bg-base) 45%, var(--bg-mid) 100%);
+  background-attachment: fixed;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+img,
+video {
+  display: block;
+  max-width: 100%;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------- 布局骨架 ---------------- */
+
+.app {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-6) var(--sp-4);
+  max-width: var(--w-page);
+  width: 100%;
+  margin: 0 auto;
+}
+
+.topbar .brand {
+  font-family: var(--font-title);
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-right: auto;
+  color: var(--accent);
+}
+
+.main {
+  flex: 1;
+  width: 100%;
+  max-width: var(--w-page);
+  margin: 0 auto;
+  padding: var(--sp-4) var(--sp-4) var(--sp-16);
+}
+
+/* 开始页需要真正的通屏铺满，不吃标准页面的居中留白 */
+.main-flush {
+  max-width: none;
+  padding: 0;
+}
+
+/* 赛制配置页内容偏少，撑不满整屏高度——垂直居中在剩余空间里，
+   不要顶着标准页面的顶部堆着，四周留一大片空白很难读 */
+.main-centered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.footer {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 10px;
+  padding: var(--sp-6) var(--sp-4);
+}
+
+@media (min-width: 768px) {
+  .topbar,
+  .main {
+    padding-left: var(--sp-6);
+    padding-right: var(--sp-6);
+  }
+}
+
+/* ---------------- 玻璃表面通用配方（DESIGN.md §4） ---------------- */
+/* 任何"玻璃"组件都是这五行，不要现场发明新的 blur 值 */
+
+.glass {
+  background: var(--glass-fill);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+/* ---------------- 按钮 ---------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  padding: 12px 32px;
+  border-radius: var(--r-pill);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.14px;
+  transition:
+    background var(--dur-state) var(--ease-out),
+    filter var(--dur-state) var(--ease-out),
+    transform var(--dur-tap) var(--ease-out),
+    border-color var(--dur-state) var(--ease-out);
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+/* 主 CTA：绿色调的玻璃，不是实心块——整站所有按钮统一走玻璃材质，
+   靠"绿色调 + 更亮的描边"和次要按钮区分开，不是靠"透明 vs 不透明" */
+.btn-primary {
+  background: rgba(30, 215, 96, 0.28);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid rgba(30, 215, 96, 0.55);
+  border-top-color: rgba(200, 255, 220, 0.85);
+  border-left-color: rgba(200, 255, 220, 0.85);
+  color: var(--text-bright);
+  box-shadow: var(--glass-shadow);
+}
+.btn-primary:hover {
+  background: rgba(30, 215, 96, 0.4);
+  transform: translateY(-1px);
+}
+.btn-primary:active {
+  background: rgba(30, 215, 96, 0.6);
+  transform: translateY(0) scale(0.97);
+}
+.btn-primary:disabled {
+  background: var(--glass-fill);
+  color: var(--text-secondary);
+  border: 1px solid var(--glass-border);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-secondary {
+  background: var(--glass-fill);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+}
+.btn-secondary:hover {
+  background: var(--glass-fill-strong);
+}
+
+.btn-sm {
+  padding: 11px 22px;
+  font-size: 15px;
+}
+
+/* 金色调玻璃——和 .btn-primary 同一个配方，换成金色调 */
+.btn-gold {
+  background: rgba(245, 197, 66, 0.28);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid rgba(245, 197, 66, 0.55);
+  border-top-color: rgba(255, 232, 170, 0.85);
+  border-left-color: rgba(255, 232, 170, 0.85);
+  color: var(--text-bright);
+  box-shadow: var(--glass-shadow);
+}
+.btn-gold:hover {
+  background: rgba(245, 197, 66, 0.4);
+}
+.btn-gold:active {
+  background: rgba(245, 197, 66, 0.6);
+}
+
+/* PK 对战页专属的「确认选择」——全局唯一一个更大更重的按钮，因为这是整场
+   比赛里唯一真正"拍板"的动作。hover/active 只是玻璃调深，不转实心——
+   全站按钮统一走玻璃材质，不再用"变成实心块"表达强调 */
+.btn-confirm {
+  background: var(--glass-fill-strong);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  color: var(--text-primary);
+  font-size: 16px;
+  padding: 16px 48px;
+  border: 1px solid var(--glass-border);
+}
+.btn-confirm:hover:not(:disabled) {
+  background: rgba(30, 215, 96, 0.4);
+  border-color: rgba(30, 215, 96, 0.6);
+  color: var(--text-bright);
+}
+.btn-confirm:active:not(:disabled) {
+  background: rgba(30, 215, 96, 0.6);
+}
+.btn-confirm:disabled {
+  background: var(--glass-fill);
+  color: var(--text-secondary);
+  border-color: var(--glass-border);
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ---------------- chip ---------------- */
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  justify-content: center;
+  align-items: center;
+}
+
+.chip {
+  background: var(--glass-fill);
+  backdrop-filter: blur(10px) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(10px) saturate(var(--glass-saturate));
+  border: 1px solid transparent;
+  border-radius: var(--r-pill);
+  padding: 13px 26px;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  transition:
+    background var(--dur-state) var(--ease-out),
+    color var(--dur-state) var(--ease-out),
+    border-color var(--dur-state) var(--ease-out);
+}
+
+.chip:hover {
+  background: var(--glass-fill-strong);
+  color: var(--text-primary);
+}
+
+/* 紫色背景下光靠描边变色不够醒目，选中态叠加浸染 */
+.chip.is-on {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-wash);
+}
+
+.chip-label {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* ---------------- 通用文案 ---------------- */
+
+.page-title {
+  font-size: 3.5rem;
+  font-weight: 700;
+  line-height: 1.1;
+  text-align: center;
+  margin: var(--sp-8) 0 var(--sp-8);
+}
+
+.prose {
+  max-width: var(--w-prose);
+  margin: 0 auto;
+  color: var(--text-secondary);
+  text-align: center;
+  font-size: 17px;
+}
+
+.section {
+  margin-bottom: var(--sp-8);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  align-items: center;
+}
+
+/* ---------------- 规模选择 ---------------- */
+
+.size-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  justify-content: center;
+}
+
+.size-btn {
+  background: var(--glass-fill);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-md);
+  padding: var(--sp-8) var(--sp-10);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  transition:
+    transform var(--dur-state) var(--ease-out),
+    background var(--dur-state) var(--ease-out),
+    box-shadow var(--dur-state) var(--ease-out);
+}
+
+.size-btn:hover:not(:disabled) {
+  background: var(--glass-fill-strong);
+  transform: translateY(-3px);
+  box-shadow: var(--glass-shadow);
+}
+
+.size-btn:disabled {
+  color: var(--text-secondary);
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.size-btn small {
+  display: block;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-secondary);
+  margin-top: var(--sp-2);
+}
+
+/* ---------------- 选手卡片 ---------------- */
+/* 名字文字才是主要内容，缩略图效果不好——2026-08-17 产品所有者要求整个
+   换掉：不再用真实照片，卡片分三等份，上 2/3 是渐变底色（配色算法沿用
+   占位图时期的 hueOf() 哈希，同一个 id 永远同一个颜色，见
+   PLACEHOLDER_COLORS.md）+ hover 播放视频预览，下 1/3 是放大的名字。
+   两个独立热区不变：上 2/3 点了看完整视频（弹层，原生比例），下 1/3
+   点了选择晋级。见 DESIGN.md §4 */
+
+.card {
+  position: relative;
+  background: var(--glass-fill);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  box-shadow: none;
+  /* 建一个独立的层叠上下文——hover 预览的 <video> 起播时 GPU 会把它提升成
+     单独的合成层，没有这条某些浏览器会在圆角裁切生效前先画一帧不受
+     border-radius/overflow 约束的画面，看起来像卡片外面有白色的东西在闪 */
+  isolation: isolate;
+  transition:
+    transform var(--dur-state) var(--ease-out),
+    box-shadow var(--dur-state) var(--ease-out),
+    border-color var(--dur-state) var(--ease-out);
+}
+
+.card:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: var(--glass-shadow);
+  border-color: var(--glass-border-bright);
+}
+
+.card.is-picked {
+  border-color: var(--accent-border);
+  box-shadow:
+    0 0 0 2px var(--accent-border),
+    0 8px 28px var(--accent-glow);
+}
+
+.card-media {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  border-radius: inherit;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  /* 名字字号用 cqw 撑满分配到的宽度，容器查询以这个元素的宽度为基准
+     （卡片宽度在网格里是自适应的，固定 px 字号在窄卡片上会溢出/在宽卡片
+     上显得小气） */
+  container-type: inline-size;
+}
+
+/* 上 2/3：缩略图的毛玻璃静态图（渐变兜底），唯一的"看视频"热区。图片本身
+   在构建期已经离线模糊过了（scripts/gen-blur-thumbs.mjs），这里只再叠一层
+   很薄的玻璃描边/浸染，让它在观感上和站内其它玻璃面板是同一套材质语言，
+   不需要也不叠加运行时 backdrop-filter——图已经是模糊的了，没有"后面的东西"
+   要透过去模糊 */
+.card-visual {
+  position: relative;
+  flex: 2 1 0;
+  overflow: hidden;
+  cursor: pointer;
+  isolation: isolate;
+  background-repeat: no-repeat;
+  background-size: cover, cover;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+/* hover 静音预览：桌面端鼠标悬停在卡片上时淡入播放，盖在毛玻璃缩略图上面。
+   object-fit: cover 铺满整个容器、居中不做额外偏移（用户要求"放大来 fit
+   容器""不用让女生在正中间，直接把视频放进框里"——缩略图的 focus 裁切锚点
+   是给静态图调的，套到视频上常常会把裁切窗口推到源素材左右的黑边上,所以
+   这里不复用那个字段，见 card.ts 的 attachHoverPreview()）。跟弹层里保留
+   原生比例的 contain 是两种不同的展示意图。z-index 卡在卡片自身背景图
+   （更底层）和下面的白色玻璃遮罩/选中浸染层（1/2）之间，这样悬浮态视觉上
+   还是同一套材质语言。只在真正支持 hover 的指针设备上创建（见 card.ts 的
+   matchMedia 判断），触屏不建这个元素，省流量也避免触屏上没有"划过又移开"
+   这种手势语义。 */
+.card-preview-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-state) var(--ease-out);
+}
+
+.card-preview-video.is-visible {
+  opacity: 1;
+}
+
+/* 极薄的白色叠色 + 顶部高光，呼应全站玻璃面板的边缘反光处理 */
+.card-visual::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--glass-fill);
+  box-shadow: inset 0 1px 0 var(--glass-border-bright);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* 选中时的绿色浸染层 */
+.card-visual::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--accent-wash);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-state) var(--ease-out);
+  z-index: 2;
+}
+.card.is-picked .card-visual::after {
+  opacity: 1;
+}
+
+.card-cat {
+  position: absolute;
+  top: var(--sp-3);
+  left: var(--sp-3);
+  background: var(--glass-fill-strong);
+  backdrop-filter: blur(10px);
+  border-radius: var(--r-xs);
+  padding: 5px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  pointer-events: none;
+  z-index: 3;
+}
+
+.card-noclip {
+  position: absolute;
+  right: var(--sp-2);
+  bottom: var(--sp-2);
+  background: var(--glass-fill-strong);
+  backdrop-filter: blur(10px);
+  border-radius: var(--r-badge);
+  padding: 3px 8px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* 下 1/3：名字，选择晋级的唯一入口，做成明确可点的按钮而不是被动标签。
+   字号尽量撑满这一整块分配到的高度/宽度——产品所有者要求"名字尽可能
+   放大来适应分配区域" */
+
+.card-name {
+  position: relative;
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border-top: 1px solid var(--glass-border);
+  font-size: clamp(20px, 7cqw, 34px);
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
+  transition: background-color var(--dur-state) var(--ease-out);
+}
+
+.card-name-text {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+button.card-name {
+  width: 100%;
+  cursor: pointer;
+}
+button.card-name:hover,
+button.card-name:focus-visible {
+  background: var(--accent-wash);
+}
+
+/* ---------------- 播放键 ---------------- */
+/* 图片区域的可见提示 + 键盘可达入口，材质是玻璃，hover 才转实心绿。默认就
+   常驻显示（不再靠 hover 才现身）——点击直接在卡片原地放声播放，不弹层，
+   播放键因此是唯一告诉用户"这里能点、点了会怎样"的可见入口，藏起来没有
+   hover 兜底的意义了。播放中会切成暂停图标，再点一下能停下来 */
+
+.card-view-btn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 48px;
+  height: 48px;
+  border-radius: var(--r-circle);
+  background: var(--glass-fill-strong);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  box-shadow: none;
+  display: grid;
+  place-items: center;
+  z-index: 3;
+  opacity: 1;
+  transition:
+    background var(--dur-state) var(--ease-out),
+    opacity var(--dur-state) var(--ease-out),
+    transform var(--dur-tap) var(--ease-out);
+}
+
+.card-view-btn:hover {
+  background: rgba(30, 215, 96, 0.5);
+  border-color: rgba(30, 215, 96, 0.7);
+  transform: translate(-50%, -50%) scale(1.06);
+}
+
+.card-view-btn:active {
+  transform: translate(-50%, -50%) scale(0.94);
+}
+
+.card-view-btn svg {
+  width: 18px;
+  height: 18px;
+  fill: #fff;
+  transition: fill var(--dur-state) var(--ease-out);
+}
+
+.card-view-btn[data-state='idle'] svg {
+  margin-left: 1.5px;
+}
+
+.card-view-btn[data-state='loading'] {
+  cursor: progress;
+}
+.card-view-btn[data-state='loading']::before {
+  content: '';
+  width: 20px;
+  height: 20px;
+  border-radius: var(--r-circle);
+  border: 2px solid var(--accent-wash);
+  border-top-color: var(--accent);
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 379px) {
+  .card-view-btn {
+    width: 40px;
+    height: 40px;
+  }
+  .card-view-btn svg {
+    width: 15px;
+    height: 15px;
+  }
+}
+
+@media (max-width: 767px) and (min-width: 380px) {
+  .card-view-btn {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* ---------------- PK 页 ---------------- */
+
+.round-head {
+  text-align: center;
+  margin-bottom: var(--sp-5);
+}
+
+.round-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.round-sub {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-top: var(--sp-1);
+}
+
+.round-bar {
+  max-width: 240px;
+  height: 3px;
+  margin: var(--sp-3) auto 0;
+  background: var(--glass-fill);
+  border-radius: var(--r-pill);
+  overflow: hidden;
+}
+
+.round-bar > i {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transition: width var(--dur-state) var(--ease-out);
+}
+
+.match {
+  max-width: var(--w-match);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--sp-3);
+  align-items: center;
+}
+
+.vs {
+  font-family: var(--font-num);
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  text-align: center;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.vs::before,
+.vs::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--glass-border));
+}
+.vs::after {
+  background: linear-gradient(90deg, var(--glass-border), transparent);
+}
+
+@media (min-width: 768px) {
+  .match {
+    grid-template-columns: 1fr auto 1fr;
+    gap: var(--sp-5);
+  }
+  .vs {
+    flex-direction: column;
+    height: 100%;
+  }
+  .vs::before,
+  .vs::after {
+    width: 1px;
+    flex: 1;
+    height: auto;
+    background: linear-gradient(180deg, transparent, var(--glass-border));
+  }
+  .vs::after {
+    background: linear-gradient(180deg, var(--glass-border), transparent);
+  }
+}
+
+@media (min-width: 1280px) {
+  .match .card {
+    max-width: 380px;
+    justify-self: center;
+    width: 100%;
+  }
+}
+
+/* 确认条：移动端吸底 */
+.confirm-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: var(--z-sticky);
+  display: flex;
+  justify-content: center;
+  padding: var(--sp-4) 0 calc(var(--sp-4) + env(safe-area-inset-bottom));
+  margin-top: var(--sp-5);
+  /* 不给自己的背景色——就是外层页面背景，不需要在紫色渐变上再凿一块
+     不完全match的色块。按钮自己有玻璃底，滚动内容从下面露出来也不会
+     糊到看不清按钮 */
+  background: none;
+}
+
+/* 超选拒绝反馈 */
+.shake {
+  animation: shake 0.4s var(--ease-in-out);
+}
+
+@keyframes shake {
+  10%, 90% { transform: translateX(-2px); }
+  20%, 80% { transform: translateX(4px); }
+  30%, 50%, 70% { transform: translateX(-7px); }
+  40%, 60% { transform: translateX(7px); }
+}
+
+/* ---------------- 加载闸门 ---------------- */
+
+.gate {
+  max-width: 420px;
+  margin: 18vh auto 0;
+  text-align: center;
+}
+
+.gate-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: var(--sp-2);
+}
+
+.gate-sub {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-top: var(--sp-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.progress {
+  height: 4px;
+  border-radius: var(--r-pill);
+  background: var(--glass-fill);
+  overflow: hidden;
+}
+
+.progress > i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+  transition: width 280ms var(--ease-out);
+}
+
+/* ================================================================
+   开始页：三段式状态机（loading → ready → revealed）
+   见 DESIGN.md §7「开始页三段式状态机」。通屏铺满，独立于标准页面布局。
+   ================================================================ */
+
+.splash {
+  position: relative;
+  min-height: 100dvh;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  /* 两个阶段的控件都钉在画面正中央（上下左右），不分开处理 */
+  align-items: center;
+  justify-content: center;
+}
+
+.splash-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 22%;
+}
+
+/* 阶段 1/2：低品质占位图，故意模糊+放大掩盖瑕疵和边缘接缝 */
+.splash-bg-placeholder {
+  filter: blur(28px) saturate(1.3) brightness(0.82);
+  transform: scale(1.15);
+  transition:
+    opacity var(--dur-morph) var(--ease-out),
+    filter var(--dur-morph) var(--ease-out);
+}
+
+/* 高清图，默认透明，揭幕时淡入 */
+.splash-bg-full {
+  opacity: 0;
+  filter: blur(0);
+  transition:
+    opacity var(--dur-morph) var(--ease-out),
+    filter var(--dur-morph) var(--ease-out);
+}
+
+.splash.is-revealing .splash-bg-full,
+.splash.stage-revealed .splash-bg-full {
+  opacity: 1;
+}
+.splash.is-revealing .splash-bg-placeholder,
+.splash.stage-revealed .splash-bg-placeholder {
+  opacity: 0;
+}
+
+/* 环境暗角，保证面板文字在任何画面上都可读 */
+.splash::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(5, 3, 11, 0.88) 0%,
+    rgba(5, 3, 11, 0.35) 45%,
+    rgba(5, 3, 11, 0.1) 75%
+  );
+  pointer-events: none;
+}
+
+/* 常驻静音键：开始页没有顶栏，音乐已经在放，需要一个不靠导航就能关掉
+   声音的入口。和顶栏的静音键是同一个全局状态，不是独立开关 */
+.splash-mute {
+  position: absolute;
+  z-index: 2;
+  top: var(--sp-4);
+  right: var(--sp-4);
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-circle);
+  background: var(--glass-fill-strong);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  display: grid;
+  place-items: center;
+  font-size: 17px;
+  line-height: 1;
+  transition: background var(--dur-state) var(--ease-out);
+}
+.splash-mute:hover {
+  background: var(--glass-fill);
+}
+
+.splash-panel {
+  position: relative;
+  z-index: 1;
+  width: min(560px, calc(100% - var(--sp-8)));
+  padding: var(--sp-8) var(--sp-6);
+  border-radius: var(--r-xl);
+  text-align: center;
+  background: var(--glass-fill-strong);
+  backdrop-filter: blur(var(--glass-blur-lg)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur-lg)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  border-top-color: var(--glass-border-bright);
+  border-left-color: var(--glass-border-bright);
+  box-shadow: var(--glass-shadow);
+  transition:
+    backdrop-filter var(--dur-morph) var(--ease-out),
+    background var(--dur-morph) var(--ease-out);
+  overflow: hidden;
+}
+
+.splash.stage-revealed .splash-panel {
+  background: var(--glass-fill);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+}
+
+/* 一次性虹彩扫光：只在揭幕瞬间出现，"调味料不是主菜" */
+.splash-panel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 30%,
+    rgba(180, 140, 255, 0.35) 45%,
+    rgba(120, 220, 255, 0.3) 52%,
+    transparent 65%
+  );
+  transform: translateX(-120%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.splash.is-revealing .splash-panel::after {
+  animation: sheen var(--dur-morph) var(--ease-out);
+}
+
+@keyframes sheen {
+  0% {
+    transform: translateX(-120%);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(120%);
+    opacity: 0;
+  }
+}
+
+.splash-title {
+  font-family: var(--font-title);
+  font-size: clamp(2.5rem, 8vw, 4rem);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--text-bright);
+  text-shadow: 0 4px 24px rgba(5, 2, 15, 0.6);
+  margin-bottom: var(--sp-6);
+}
+
+.splash-progress {
+  height: 4px;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.14);
+  overflow: hidden;
+  max-width: 320px;
+  margin: 0 auto;
+}
+
+.splash-progress > i {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transition: width 280ms var(--ease-out);
+}
+
+.splash-progress-label {
+  margin-top: var(--sp-3);
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Ready 态：和揭幕后的「开始游戏」CTA 是同一套 .btn.btn-primary 底子
+   （同样的绿色调玻璃、同样的字号/内边距），只加一圈呼吸动效提示"可以点
+   了"——两个阶段的主控件必须长得一样，用户才能认出这是同一条操作路径 */
+.splash-ready {
+  padding: 16px 44px;
+  font-size: 16px;
+  text-transform: uppercase;
+  letter-spacing: 1.6px;
+  animation: ready-pulse 1.8s var(--ease-in-out) infinite;
+}
+.splash-ready:disabled {
+  animation: none;
+  opacity: 0.5;
+  cursor: default;
+}
+
+@keyframes ready-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--accent-glow); }
+  50% { box-shadow: 0 0 0 10px rgba(30, 215, 96, 0); }
+}
+
+/* 揭幕后的主 CTA：比标准主 CTA 更大，叠一圈极淡的虹彩描边 */
+.btn-hero {
+  position: relative;
+  padding: 16px 44px;
+  font-size: 16px;
+  animation: hero-in var(--dur-state) var(--ease-out) both;
+}
+
+.btn-hero::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: var(--r-pill);
+  padding: 1px;
+  background: conic-gradient(from 180deg, var(--accent), #b98cf2, var(--accent));
+  opacity: 0.5;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+@keyframes hero-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash-bg-placeholder,
+  .splash-bg-full,
+  .splash-panel {
+    transition-duration: 0.01ms;
+  }
+  .splash.is-revealing .splash-panel::after {
+    animation: none;
+  }
+  .splash-ready {
+    animation: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .splash-panel {
+    padding: var(--sp-6) var(--sp-4);
+  }
+}
+
+/* ---------------- 冠军页 ---------------- */
+
+.champion {
+  text-align: center;
+  padding-top: var(--sp-8);
+}
+
+.trophy {
+  font-size: 56px;
+  line-height: 1;
+  filter: drop-shadow(0 0 24px var(--gold-glow));
+}
+
+.card.is-champion {
+  width: min(300px, 72vw);
+  margin: var(--sp-5) auto;
+  border-color: var(--gold);
+  box-shadow:
+    0 0 0 3px var(--gold),
+    0 16px 48px var(--gold-glow);
+  cursor: default;
+  animation: reveal var(--dur-reveal) var(--ease-out) both;
+}
+
+.card.is-champion:hover {
+  transform: none;
+}
+
+@keyframes reveal {
+  from {
+    transform: scale(0.86);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* 名字和播报文案合并成一行（见 main.ts）：.champion-announce 是整行，
+   .champion-name 只是句子里包住名字的 inline 高亮，不再单独占一整行 */
+.champion-announce {
+  margin-top: var(--sp-6);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--text-bright);
+}
+
+.champion-name {
+  color: var(--gold);
+}
+
+.champion-line {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-top: var(--sp-2);
+}
+
+.path {
+  max-width: var(--w-prose);
+  margin: var(--sp-8) auto 0;
+  text-align: left;
+}
+
+.path h3 {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--gold);
+  margin: 0 0 var(--sp-4);
+}
+
+/* 晋级之路做成流程图：一条竖线穿过每一轮的节点，最后收在夺冠节点上——
+   视觉上是"一路淘汰了谁，最终流向冠军"的一条线，不是互不相干的独立行 */
+.path-flow {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+/* 连接线：从第一个节点圆点中心到最后一个节点圆点中心，圆点半径 5px */
+.path-flow::before {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 5px;
+  bottom: 5px;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--glass-border-bright), var(--gold-wash));
+}
+
+.path-node {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+}
+
+.path-node-dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  margin-top: 5px;
+  border-radius: var(--r-circle);
+  background: var(--bg-mid);
+  border: 2px solid var(--glass-border-bright);
+}
+
+.path-node-body {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--glass-fill);
+  font-size: 14px;
+  flex: 1;
+}
+
+.path-node-round {
+  color: var(--text-secondary);
+  min-width: 56px;
+  font-size: 12px;
+  flex: none;
+}
+
+.path-node-beat {
+  color: var(--text-secondary);
+}
+
+.path-node-beat b {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+/* 收尾节点：夺冠本身，金色强调，和其余淘汰记录区分开 */
+.path-node-champion .path-node-dot {
+  background: var(--gold);
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px var(--gold-wash);
+}
+
+.path-node-champion .path-node-body {
+  background: var(--gold-wash);
+  border: 1px solid var(--gold);
+}
+
+.path-node-champion .path-node-round {
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.path-node-champion .path-node-beat b {
+  color: var(--gold);
+  font-size: 16px;
+}
+
+.btn-row {
+  display: flex;
+  gap: var(--sp-3);
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: var(--sp-6);
+}
+
+/* 左「作者」右「鸣谢」两列，标题钉在同一条水平线上——两列都是"标题在前、
+   卡片在后"的纵向结构，用一个 flex 行把两列并排放，标题自然对齐。
+   鸣谢那一列的卡片本身竖排堆叠，不是横向铺开（见 DESIGN.md §4）。
+   头像 + ID，不放平台简介（简介是各自平台上的个人签名，和"这个网站/这场
+   比赛是谁做的"无关，见 DESIGN.md §4）。这是页面里权重最低的一块信息，
+   卡片做成不起眼的小胶囊，不用大块面 */
+.credits {
+  display: flex;
+  justify-content: center;
+  gap: var(--sp-8);
+  margin: var(--sp-6) auto 0;
+}
+
+.credits-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.credits-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  margin: 0 0 var(--sp-2);
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.credits-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+@media (max-width: 480px) {
+  .credits {
+    flex-direction: column;
+    align-items: center;
+    gap: var(--sp-5);
+  }
+}
+
+.credit-card {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 6px var(--sp-3) 6px 6px;
+  border-radius: var(--r-pill);
+  background: var(--glass-fill);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+}
+
+.credit-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--r-circle);
+  object-fit: cover;
+  border: 1px solid var(--glass-border-bright);
+}
+
+.credit-meta {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.credit-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
+.credit-role {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* 撒花：一次性庆祝内容，不受"系统色克制"约束 */
+.confetti {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: var(--z-overlay);
+}
+
+.confetti i {
+  position: absolute;
+  width: 8px;
+  height: 14px;
+  border-radius: 2px;
+  animation: fall linear forwards;
+}
+
+@keyframes fall {
+  from {
+    transform: translateY(-10vh) rotate(0deg);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(110vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+/* ---------------- 选手库 / 自选 ---------------- */
+
+.search {
+  position: relative;
+  max-width: 420px;
+  margin: 0 auto var(--sp-5);
+}
+
+.search input {
+  width: 100%;
+  background: var(--glass-fill);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-pill);
+  padding: 12px 20px 12px 44px;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 15px;
+  outline: none;
+  transition:
+    border-color var(--dur-state) var(--ease-out),
+    box-shadow var(--dur-state) var(--ease-out);
+}
+
+.search input::placeholder {
+  color: var(--text-secondary);
+}
+
+/* 聚焦态：描边转亮 + 绿色外描边（参考规范 focus ring 2px accent offset 2px） */
+.search input:focus {
+  border-color: var(--glass-border-bright);
+  box-shadow: 0 0 0 2px var(--bg-base), 0 0 0 4px var(--accent);
+}
+
+.search::before {
+  content: '🔍';
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: var(--sp-4);
+}
+
+.grid .card-name {
+  padding: var(--sp-2);
+}
+
+.grid .card-view-btn {
+  width: 40px;
+  height: 40px;
+}
+.grid .card-view-btn svg {
+  width: 15px;
+  height: 15px;
+}
+
+.pick-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: var(--z-sticky);
+  display: flex;
+  gap: var(--sp-3);
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: var(--sp-4) 0 calc(var(--sp-4) + env(safe-area-inset-bottom));
+  margin-top: var(--sp-5);
+  /* 不给自己的背景色——就是外层页面背景，不需要在紫色渐变上再凿一块
+     不完全match的色块。按钮自己有玻璃底，滚动内容从下面露出来也不会
+     糊到看不清按钮 */
+  background: none;
+}
+
+.pick-count {
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.empty {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: var(--sp-16) var(--sp-4);
+}
+
+/* ---------------- 提示条 ---------------- */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--sp-12) + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  background: var(--glass-fill-strong);
+  backdrop-filter: blur(var(--glass-blur-lg)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur-lg)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: var(--r-pill);
+  padding: 10px 20px;
+  font-size: 14px;
+  z-index: var(--z-toast);
+  animation: toast-in var(--dur-state) var(--ease-out);
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 12px);
+  }
+}
+
+/* ---------------- 无障碍 ---------------- */
+/* 不用浏览器默认 outline，但键盘焦点必须保留清晰的绿色描边，
+   这条是无障碍红线，不因视觉统一而牺牲 */
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .confetti {
+    display: none;
+  }
+}

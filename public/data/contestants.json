@@ -1,0 +1,305 @@
+{
+  "version": 1,
+  "title": "猴女郎巅峰对决",
+  "contestants": [
+    {
+      "id": "mg001",
+      "name": "悲伤酸菜鱼",
+      "thumb": "thumbs/mg001.jpg",
+      "clip": "clips/mg001.mp4",
+      "category": "人气",
+      "focus": "right"
+    },
+    {
+      "id": "mg002",
+      "name": "打火姬",
+      "thumb": "thumbs/mg002.jpg",
+      "clip": "clips/mg002.mp4",
+      "category": "人气"
+    },
+    {
+      "id": "mg003",
+      "name": "豆奶杯",
+      "thumb": "thumbs/mg003.jpg",
+      "clip": "clips/mg003.mp4",
+      "category": "人气",
+      "focus": "right"
+    },
+    {
+      "id": "mg004",
+      "name": "哈尼mm",
+      "thumb": "thumbs/mg004.jpg",
+      "clip": "clips/mg004.mp4",
+      "category": "人气",
+      "focus": "right"
+    },
+    {
+      "id": "mg005",
+      "name": "贺因蓝",
+      "thumb": "thumbs/mg005.jpg",
+      "clip": "clips/mg005.mp4",
+      "category": "人气",
+      "focus": "right"
+    },
+    {
+      "id": "mg006",
+      "name": "嘉1",
+      "thumb": "thumbs/mg006.jpg",
+      "clip": "clips/mg006.mp4",
+      "category": "人气"
+    },
+    {
+      "id": "mg007",
+      "name": "沙士",
+      "thumb": "thumbs/mg007.jpg",
+      "clip": "clips/mg007.mp4",
+      "category": "人气",
+      "focus": "right"
+    },
+    {
+      "id": "mg008",
+      "name": "双双",
+      "thumb": "thumbs/mg008.jpg",
+      "clip": "clips/mg008.mp4",
+      "category": "人气"
+    },
+    {
+      "id": "mg009",
+      "name": "思小柒",
+      "thumb": "thumbs/mg009.jpg",
+      "clip": "clips/mg009.mp4",
+      "category": "人气",
+      "focus": "right"
+    },
+    {
+      "id": "mg010",
+      "name": "兔绷",
+      "thumb": "thumbs/mg010.jpg",
+      "clip": "clips/mg010.mp4",
+      "category": "人气"
+    },
+    {
+      "id": "mg011",
+      "name": "一只柚子",
+      "thumb": "thumbs/mg011.jpg",
+      "clip": "clips/mg011.mp4",
+      "category": "人气",
+      "focus": "right"
+    },
+    {
+      "id": "mg012",
+      "name": "优优uou",
+      "thumb": "thumbs/mg012.jpg",
+      "clip": "clips/mg012.mp4",
+      "category": "人气"
+    },
+    {
+      "id": "mg013",
+      "name": "幼师",
+      "thumb": "thumbs/mg013.jpg",
+      "clip": "clips/mg013.mp4",
+      "category": "人气",
+      "focus": "right"
+    },
+    {
+      "id": "mg014",
+      "name": "Roi",
+      "thumb": "thumbs/mg014.jpg",
+      "clip": "clips/mg014.mp4",
+      "category": "人气",
+      "focus": "right"
+    },
+    {
+      "id": "mg015",
+      "name": "ukiyo",
+      "thumb": "thumbs/mg015.jpg",
+      "clip": "clips/mg015.mp4",
+      "category": "人气",
+      "focus": "right"
+    },
+    {
+      "id": "mg016",
+      "name": "ww",
+      "thumb": "thumbs/mg016.jpg",
+      "clip": "clips/mg016.mp4",
+      "category": "人气",
+      "focus": "right"
+    },
+    {
+      "id": "mg017",
+      "name": "阿双",
+      "thumb": "thumbs/mg017.jpg",
+      "clip": "clips/mg017.mp4",
+      "category": "新锐",
+      "focus": "right"
+    },
+    {
+      "id": "mg018",
+      "name": "初恋小辣",
+      "thumb": "thumbs/mg018.jpg",
+      "clip": "clips/mg018.mp4",
+      "category": "新锐",
+      "focus": "right"
+    },
+    {
+      "id": "mg019",
+      "name": "蝶蝶蛉",
+      "thumb": "thumbs/mg019.jpg",
+      "clip": "clips/mg019.mp4",
+      "category": "新锐"
+    },
+    {
+      "id": "mg020",
+      "name": "灰色郁泪",
+      "thumb": "thumbs/mg020.jpg",
+      "clip": "clips/mg020.mp4",
+      "category": "新锐",
+      "focus": "right"
+    },
+    {
+      "id": "mg021",
+      "name": "浆米糊",
+      "thumb": "thumbs/mg021.jpg",
+      "clip": "clips/mg021.mp4",
+      "category": "新锐",
+      "focus": "right"
+    },
+    {
+      "id": "mg022",
+      "name": "林同学",
+      "thumb": "thumbs/mg022.jpg",
+      "clip": "clips/mg022.mp4",
+      "category": "新锐",
+      "focus": "right"
+    },
+    {
+      "id": "mg023",
+      "name": "罗婉丁",
+      "thumb": "thumbs/mg023.jpg",
+      "clip": "clips/mg023.mp4",
+      "category": "新锐",
+      "focus": "right"
+    },
+    {
+      "id": "mg024",
+      "name": "糯米",
+      "thumb": "thumbs/mg024.jpg",
+      "clip": "clips/mg024.mp4",
+      "category": "新锐",
+      "focus": "right"
+    },
+    {
+      "id": "mg025",
+      "name": "小pan",
+      "thumb": "thumbs/mg025.jpg",
+      "clip": "clips/mg025.mp4",
+      "category": "新锐",
+      "focus": "right"
+    },
+    {
+      "id": "mg026",
+      "name": "赵凡舒",
+      "thumb": "thumbs/mg026.jpg",
+      "clip": "clips/mg026.mp4",
+      "category": "新锐",
+      "focus": "right"
+    },
+    {
+      "id": "mg027",
+      "name": "Joss",
+      "thumb": "thumbs/mg027.jpg",
+      "clip": "clips/mg027.mp4",
+      "category": "新锐"
+    },
+    {
+      "id": "mg028",
+      "name": "OKOK",
+      "thumb": "thumbs/mg028.jpg",
+      "clip": "clips/mg028.mp4",
+      "category": "新锐",
+      "focus": "right"
+    },
+    {
+      "id": "mg029",
+      "name": "豆妹",
+      "thumb": "thumbs/mg029.jpg",
+      "clip": "clips/mg029.mp4",
+      "focus": "right"
+    },
+    {
+      "id": "mg030",
+      "name": "好烦",
+      "thumb": "thumbs/mg030.jpg",
+      "clip": "clips/mg030.mp4"
+    },
+    {
+      "id": "mg031",
+      "name": "十月",
+      "thumb": "thumbs/mg031.jpg",
+      "clip": "clips/mg031.mp4",
+      "focus": "right"
+    },
+    {
+      "id": "mg032",
+      "name": "桃饱饱",
+      "thumb": "thumbs/mg032.jpg",
+      "clip": "clips/mg032.mp4"
+    },
+    {
+      "id": "mg033",
+      "name": "天天ya",
+      "thumb": "thumbs/mg033.jpg",
+      "clip": "clips/mg033.mp4",
+      "focus": "right"
+    },
+    {
+      "id": "mg034",
+      "name": "熙熙驾到",
+      "thumb": "thumbs/mg034.jpg",
+      "clip": "clips/mg034.mp4",
+      "focus": "right"
+    },
+    {
+      "id": "mg035",
+      "name": "现在呢",
+      "thumb": "thumbs/mg035.jpg",
+      "clip": "clips/mg035.mp4",
+      "focus": "right"
+    },
+    {
+      "id": "mg036",
+      "name": "小锦鲤",
+      "thumb": "thumbs/mg036.jpg",
+      "clip": "clips/mg036.mp4",
+      "focus": "right"
+    },
+    {
+      "id": "mg037",
+      "name": "腋毛梳中分",
+      "thumb": "thumbs/mg037.jpg",
+      "clip": "clips/mg037.mp4",
+      "focus": "right"
+    },
+    {
+      "id": "mg038",
+      "name": "一颗蛋球",
+      "thumb": "thumbs/mg038.jpg",
+      "clip": "clips/mg038.mp4",
+      "focus": "right"
+    },
+    {
+      "id": "mg039",
+      "name": "仔仔",
+      "thumb": "thumbs/mg039.jpg",
+      "clip": "clips/mg039.mp4",
+      "focus": "right"
+    },
+    {
+      "id": "mg040",
+      "name": "Lila",
+      "thumb": "thumbs/mg040.jpg",
+      "clip": "clips/mg040.mp4",
+      "focus": "right"
+    }
+  ]
+}

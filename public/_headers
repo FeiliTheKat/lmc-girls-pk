@@ -1,0 +1,41 @@
+# Cloudflare Pages 静态资源缓存规则。
+#
+# 默认（不写规则的路径）是 Cache-Control: public, max-age=0, must-revalidate ——
+# 每次都要跟 CDN 打一次招呼确认文件变没变（ETag 条件请求，没变的话 304，不
+# 重新下载正文，但这个往返本身的延迟省不掉）。https://developers.cloudflare.com/pages/configuration/headers/
+#
+# index.html 和 /data/* 故意不在下面列出、维持这个默认行为：
+#   - index.html 得让浏览器每次都确认，不然重新部署了用户也刷不出新版本
+#   - /data/contestants.json 选手名单可能会手动改，同理不能长缓存；
+#     src/data.ts 的 fetch 本来就带了 cache: 'no-cache'，这里维持默认只是
+#     不给它添乱
+#
+# 下面这些路径设成一年 immutable，回头客命中本地缓存直接用，连确认请求都
+# 不用发：
+#   - /assets/*  是 vite build 出来的 JS/CSS，文件名自带内容哈希
+#     （index-xxxxxxxx.css），内容一变文件名自动跟着变，immutable 完全安全
+#   - clips/thumbs/hero/audio/creators 是手动转码/裁剪出的素材，文件名不带
+#     哈希——如果以后重新转码（比如又调了一次压缩预设），文件内容变了但
+#     URL 没变，immutable 缓存窗口内的回头客不会自动看到新版本，得手动把
+#     文件改名/加版本号才能让缓存失效。这是需要记住的人为纪律，不是自动的。
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/clips/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/thumbs/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/thumbs-blur/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/hero/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/audio/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/creators/*
+  Cache-Control: public, max-age=31536000, immutable

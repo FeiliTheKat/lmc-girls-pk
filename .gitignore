@@ -1,0 +1,11 @@
+node_modules/
+dist/
+raw/
+*.local
+.DS_Store
+public/data/contestants.generated.json
+
+# 内部规划/设计文档，不进公开仓库——只留在本地给自己参考
+PRD.md
+DESIGN.md
+PLACEHOLDER_COLORS.md
