@@ -53,3 +53,32 @@ export interface TournamentState {
   championId: string | null;
   createdAt: number;
 }
+
+/**
+ * 小组赛阶段状态：候选池分成若干组（每组固定 4 人），每组一屏选出更喜欢
+ * 的 2 位直通，另外 2 位落选进复活赛池。同样只存 id，可直接序列化。
+ */
+export interface GroupStageState {
+  /** 分组结果，赛前一次性随机产生，之后不再变化 */
+  groups: string[][];
+  /** 当前展示到第几组（0-based） */
+  groupIndex: number;
+  /** 已确认直通的 id，随每组确认累加 */
+  qualifiers: string[];
+  /** 已确认落选的 id，随每组确认累加，交给复活赛 */
+  losers: string[];
+}
+
+/**
+ * 复活赛阶段状态：只跑一轮——从小组赛落选者里淘汰掉多余的人，幸存者
+ * （对战胜者 + 直接轮空者）凑满目标人数后交给淘汰赛。不是 TournamentState
+ * 那种"打到只剩 1 人"的循环，语义不同，所以单独建模。
+ */
+export interface RedemptionState {
+  /** 本轮对阵表，[a, b]；b 为 null 表示直接复活（轮空） */
+  pairs: [string, string | null][];
+  /** 当前进行到第几场（pairs 的下标） */
+  matchIndex: number;
+  /** 已确定复活的 id（含对战胜者与轮空者） */
+  revived: string[];
+}

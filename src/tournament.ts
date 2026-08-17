@@ -44,13 +44,23 @@ export function currentRoundName(s: TournamentState): string {
   return roundName(roundPlayerCount(s));
 }
 
+/**
+ * 只依赖 pairs/matchIndex 的最小结构，playableCount/playableIndex 用它而不是
+ * 直接写 TournamentState，这样复活赛的 RedemptionState（同样是 pairs +
+ * matchIndex 的一轮对阵表）也能直接复用这两个函数，不用抄一份。
+ */
+interface PairedRound {
+  pairs: readonly [string, string | null][];
+  matchIndex: number;
+}
+
 /** 本轮需要玩家真正做选择的场次总数（不含轮空） */
-export function playableCount(s: TournamentState): number {
+export function playableCount(s: PairedRound): number {
   return s.pairs.filter((p) => p[1] !== null).length;
 }
 
 /** 当前是本轮第几场（1-based，不含轮空） */
-export function playableIndex(s: TournamentState): number {
+export function playableIndex(s: PairedRound): number {
   let n = 0;
   for (let i = 0; i <= s.matchIndex && i < s.pairs.length; i++) {
     if (s.pairs[i][1] !== null) n++;

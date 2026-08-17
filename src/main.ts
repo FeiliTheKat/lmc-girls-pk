@@ -1,5 +1,5 @@
 import './style.css';
-import type { Contestant, TournamentState } from './types';
+import type { Contestant, GroupStageState, RedemptionState, TournamentState } from './types';
 import {
   assetUrl,
   categories,
@@ -18,8 +18,22 @@ import {
   playableIndex,
   upcomingIds,
 } from './tournament';
+import {
+  confirmGroup,
+  createGroupStage,
+  currentGroup,
+  GROUP_QUALIFIERS_PER_GROUP,
+  GROUP_SIZE,
+  isGroupStageDone,
+} from './groupStage';
+import {
+  createRedemption,
+  currentRedemptionPair,
+  isRedemptionDone,
+  pickRedemptionWinner,
+} from './redemption';
 import { createCard, isMuted, setMuted, showToast, stopActiveClip } from './card';
-import { setBgmMuted } from './bgm';
+import { setBgmMuted, skipToNextTrack } from './bgm';
 import { preloader } from './preload';
 
 // 选手库只有 40 位，64/128 目前凑不满，不放出来选——库存够了再加回去
@@ -62,7 +76,17 @@ function championAnnouncement(champ: Contestant): { prefix: string; suffix: stri
   return announceCache;
 }
 
-type View = 'splash' | 'home' | 'picker' | 'gate' | 'match' | 'champion' | 'library';
+type View =
+  | 'splash'
+  | 'home'
+  | 'picker'
+  | 'gate'
+  | 'match'
+  | 'champion'
+  | 'library'
+  | 'groupDraw'
+  | 'group'
+  | 'redemption';
 
 interface App {
   view: View;
@@ -71,13 +95,19 @@ interface App {
   /** 自选参赛的勾选集合 */
   selection: Set<string>;
   state: TournamentState | null;
-  /** 当前这场选中的选手 */
+  /** 当前这场选中的选手（PK 页 / 复活赛共用） */
   picked: string | null;
   gate: { loaded: number; total: number; label: string };
   query: string;
   libCategory: string | null;
   /** 开始页三段式状态机，见 DESIGN.md §7 */
   splash: { stage: 'loading' | 'ready' | 'revealed'; loaded: number; total: number };
+  /** 小组赛世界杯模式：小组赛阶段状态，见 groupStage.ts */
+  group: GroupStageState | null;
+  /** 小组赛世界杯模式：复活赛阶段状态，见 redemption.ts */
+  redemption: RedemptionState | null;
+  /** 小组赛当前这组已勾选的 id（必须精确选够 GROUP_QUALIFIERS_PER_GROUP 个才能确认） */
+  groupPicked: Set<string>;
 }
 
 const app: App = {
@@ -91,6 +121,9 @@ const app: App = {
   query: '',
   libCategory: null,
   splash: { stage: 'loading', loaded: 0, total: 1 },
+  group: null,
+  redemption: null,
+  groupPicked: new Set(),
 };
 
 const root = document.getElementById('app')!;
@@ -114,8 +147,77 @@ function go(v: View): void {
   stopActiveClip();
   app.view = v;
   app.query = '';
+  persistCup();
   render();
   window.scrollTo({ top: 0 });
+}
+
+/* ------------------------------------------------------------------ */
+/* 断点续赛（localStorage）                                             */
+/* 覆盖随机抽取/自选参赛的普通淘汰赛，以及小组赛世界杯模式的三个阶段——      */
+/* types.ts 里早先那条"天然可 JSON 序列化，直接 setItem 即可"的注释，       */
+/* 一直没真正落地，这里补上。                                            */
+/* ------------------------------------------------------------------ */
+
+const CUP_STORAGE_KEY = 'mgc:cup';
+/** 只有这些 view 代表"进行中的赛事"，值得存档；其余 view（首页/选手库/挑选
+ *  页等）没有需要恢复的中途状态，进入时应该清掉旧档，避免残留一场废弃的赛事 */
+const RESUMABLE_VIEWS: readonly View[] = ['groupDraw', 'group', 'redemption', 'match', 'champion'];
+
+interface CupSnapshot {
+  view: View;
+  state: TournamentState | null;
+  group: GroupStageState | null;
+  redemption: RedemptionState | null;
+}
+
+function persistCup(): void {
+  try {
+    if (!RESUMABLE_VIEWS.includes(app.view)) {
+      localStorage.removeItem(CUP_STORAGE_KEY);
+      return;
+    }
+    const snapshot: CupSnapshot = {
+      view: app.view,
+      state: app.state,
+      group: app.group,
+      redemption: app.redemption,
+    };
+    localStorage.setItem(CUP_STORAGE_KEY, JSON.stringify(snapshot));
+  } catch {
+    // 隐私模式/容量已满时 localStorage 可能不可用，静默放弃持久化，不影响当场游玩
+  }
+}
+
+/** 存档里出现的所有选手 id，用来校验选手库改版后旧存档要能优雅失效 */
+function snapshotIds(snap: CupSnapshot): string[] {
+  const fromPairs = (pairs?: readonly [string, string | null][]) =>
+    (pairs ?? []).flat().filter((x): x is string => !!x);
+  return [
+    ...fromPairs(snap.state?.pairs),
+    ...(snap.state?.winners ?? []),
+    ...(snap.group?.groups.flat() ?? []),
+    ...fromPairs(snap.redemption?.pairs),
+  ];
+}
+
+/** 尝试从 localStorage 恢复上次未完成的赛事；成功返回 true */
+function restoreCup(): boolean {
+  try {
+    const raw = localStorage.getItem(CUP_STORAGE_KEY);
+    if (!raw) return false;
+    const snap = JSON.parse(raw) as CupSnapshot;
+    if (!snap || typeof snap !== 'object' || !RESUMABLE_VIEWS.includes(snap.view)) return false;
+    if (snapshotIds(snap).some((id) => !get(id))) return false;
+
+    app.view = snap.view;
+    app.state = snap.state;
+    app.group = snap.group;
+    app.redemption = snap.redemption;
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -131,14 +233,17 @@ function topbar(): HTMLElement {
   bar.appendChild(brand);
 
   // 全局静音开关：同时控制选手视频片段的音量和背景音乐，只有一个开关，
-  // 不搞两套互相独立的静音状态（见 bgm.ts 顶部注释）
-  const sound = el('button', 'btn btn-secondary btn-sm', isMuted() ? '🔇 静音' : '🔊 有声');
+  // 不搞两套互相独立的静音状态（见 bgm.ts 顶部注释）。加了 sound-toggle 类
+  // 是因为迷你播放器的暂停/播放键控制的是同一个状态，两个按钮点击后要互相
+  // 同步文字，见 syncSoundControls()
+  const sound = el('button', 'btn btn-secondary btn-sm sound-toggle', isMuted() ? '🔇 静音' : '🔊 有声');
   sound.addEventListener('click', () => {
     setMuted(!isMuted());
     setBgmMuted(isMuted());
-    sound.textContent = isMuted() ? '🔇 静音' : '🔊 有声';
+    syncSoundControls();
   });
   bar.appendChild(sound);
+  bar.appendChild(bgmPlayer());
 
   if (app.view !== 'library') {
     const lib = el('button', 'btn btn-secondary btn-sm', '选手库');
@@ -149,10 +254,13 @@ function topbar(): HTMLElement {
   if (app.view !== 'home') {
     const back = el('button', 'btn btn-secondary btn-sm', '返回');
     back.addEventListener('click', () => {
-      if (app.view === 'match' || app.view === 'champion') {
+      if (RESUMABLE_VIEWS.includes(app.view)) {
         if (!confirm('返回将结束当前赛事，确定吗？')) return;
         app.state = null;
+        app.group = null;
+        app.redemption = null;
         app.picked = null;
+        app.groupPicked = new Set();
       }
       go('home');
     });
@@ -160,6 +268,50 @@ function topbar(): HTMLElement {
   }
 
   return bar;
+}
+
+/**
+ * 顶栏迷你 BGM 播放器：暂停/播放 + 切歌两颗图标按钮，不显示曲名。暂停按钮
+ * 复用的还是那唯一一个全局静音状态（isMuted/setMuted/setBgmMuted）——没有
+ * 另建一个"只暂停音乐、不影响选手视频音量"的独立状态。以前这个项目确实
+ * 单独做过一颗 BGM 专属暂停键，后来产品所有者主动要求合并回统一开关，理由
+ * 是两套独立的声音状态互相打架、容易把用户搞糊涂（见 PRD.md §六·21）——这里
+ * 不重蹈那条覆辙，只是把同一个开关也摆进迷你播放器里、换成播放器味儿更足
+ * 的 ⏸/▶ 图标，点哪颗按钮都会通过 syncSoundControls() 互相同步文字。
+ */
+function bgmPlayer(): HTMLElement {
+  const wrap = el('div', 'bgm-player');
+
+  const pause = el('button', 'btn btn-secondary btn-sm bgm-pause-btn', isMuted() ? '▶' : '⏸');
+  pause.type = 'button';
+  pause.setAttribute('aria-label', isMuted() ? '继续播放背景音乐' : '暂停背景音乐');
+  pause.addEventListener('click', () => {
+    setMuted(!isMuted());
+    setBgmMuted(isMuted());
+    syncSoundControls();
+  });
+  wrap.appendChild(pause);
+
+  const skip = el('button', 'btn btn-secondary btn-sm bgm-skip-btn', '⏭');
+  skip.type = 'button';
+  skip.setAttribute('aria-label', '切换下一首背景音乐');
+  skip.addEventListener('click', () => skipToNextTrack());
+  wrap.appendChild(skip);
+
+  return wrap;
+}
+
+/** 顶栏"🔊 有声 / 🔇 静音"按钮和迷你播放器的暂停/播放按钮控制的是同一个全局
+ *  状态，点任意一个之后都要把另一个的文字也刷新过来，不然两颗按钮会显示
+ *  不一致的状态 */
+function syncSoundControls(): void {
+  const sound = document.querySelector<HTMLElement>('.sound-toggle');
+  if (sound) sound.textContent = isMuted() ? '🔇 静音' : '🔊 有声';
+  const pause = document.querySelector<HTMLElement>('.bgm-pause-btn');
+  if (pause) {
+    pause.textContent = isMuted() ? '▶' : '⏸';
+    pause.setAttribute('aria-label', isMuted() ? '继续播放背景音乐' : '暂停背景音乐');
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -341,6 +493,47 @@ function viewHome(main: HTMLElement): void {
   }
 
   main.appendChild(stack);
+  main.appendChild(groupModeSection());
+}
+
+/**
+ * 小组赛世界杯模式的入口区块：全员分组 → 小组赛 4 选 2 → 复活赛捞回遗珠 →
+ * 淘汰赛决出冠军，赛制细节见 groupStage.ts / redemption.ts。固定使用全部
+ * 选手（不受上面「随机抽取/自选参赛」的模式、分类选择影响），只有候选总数
+ * 是 GROUP_SIZE 的整数倍时才能开赛——分组逻辑假设每组都是满编的 4 人。
+ */
+function groupModeSection(): HTMLElement {
+  const box = el('div', 'stack group-mode');
+  box.appendChild(el('div', 'divider', '或'));
+
+  const all = poolFor(null);
+  const ready = all.length >= GROUP_SIZE * 2 && all.length % GROUP_SIZE === 0;
+
+  const cta = el('div', 'cta-badge-wrap');
+  const btn = el(
+    'button',
+    'btn btn-primary btn-recommended',
+    `🌍 小组赛世界杯模式（全部 ${all.length} 位）`,
+  );
+  btn.disabled = !ready;
+  btn.addEventListener('click', () => {
+    app.group = createGroupStage(all.map((c) => c.id));
+    app.redemption = null;
+    app.state = null;
+    go('groupDraw');
+  });
+  cta.append(el('span', 'cta-badge', '推荐'), btn);
+  box.appendChild(cta);
+  box.appendChild(
+    el(
+      'p',
+      'prose',
+      ready
+        ? `完整世界杯赛制：${all.length / GROUP_SIZE} 个小组 → 复活赛捞回遗珠 → 淘汰赛决出冠军`
+        : `小组赛模式需要选手总数是 ${GROUP_SIZE} 的整数倍，当前 ${all.length} 位暂不满足`,
+    ),
+  );
+  return box;
 }
 
 /* ------------------------------------------------------------------ */
@@ -427,6 +620,238 @@ function searchBox(): HTMLElement {
   });
   wrap.appendChild(input);
   return wrap;
+}
+
+/* ------------------------------------------------------------------ */
+/* 小组赛世界杯模式：分组抽签 → 小组赛（4 选 2） → 复活赛 → 淘汰赛           */
+/* 赛制说明见 groupStage.ts / redemption.ts 头部注释                     */
+/* ------------------------------------------------------------------ */
+
+function groupLabel(i: number): string {
+  return String.fromCharCode(65 + i); // 0→A, 1→B, ...
+}
+
+/** 大于等于 n 的最小 2 的整数次幂（淘汰赛必须是这个规模，才能一路打到只剩 1 人） */
+function nextPowerOfTwo(n: number): number {
+  let p = 1;
+  while (p < n) p *= 2;
+  return p;
+}
+
+/** 小组赛抽签结果展示页：仿 musiccup.app 的「分组抽签完毕」 */
+function viewGroupDraw(main: HTMLElement): void {
+  const gs = app.group;
+  if (!gs) return go('home');
+
+  main.appendChild(el('h1', 'page-title', '分组抽签完毕'));
+  main.appendChild(
+    el(
+      'p',
+      'prose',
+      `${gs.groups.length * GROUP_SIZE} 位选手分成 ${gs.groups.length} 组，每组选出 ${GROUP_QUALIFIERS_PER_GROUP} 位直通；落选的选手会在复活赛里再战一次`,
+    ),
+  );
+
+  const list = el('div', 'group-list');
+  gs.groups.forEach((group, i) => {
+    const box = el('div', 'group-box');
+    box.appendChild(el('h3', 'group-box-title', `${groupLabel(i)} 组`));
+    const names = el('div', 'group-box-names');
+    for (const id of group) names.appendChild(el('span', 'group-box-name', get(id)?.name ?? id));
+    box.appendChild(names);
+    list.appendChild(box);
+  });
+  main.appendChild(list);
+
+  const start = el('button', 'btn btn-primary', '开始小组赛');
+  start.addEventListener('click', () => {
+    app.groupPicked = new Set();
+    go('group');
+  });
+  main.appendChild(start);
+}
+
+/** 小组赛投票页：一屏 4 人，一次性勾选喜欢的 2 位直通（不是两两对战） */
+function viewGroup(main: HTMLElement): void {
+  const gs = app.group;
+  if (!gs) return go('home');
+  if (isGroupStageDone(gs)) return finishGroupStage();
+
+  const group = currentGroup(gs);
+  if (!group) return go('home');
+
+  const head = el('div', 'round-head');
+  head.appendChild(el('h2', 'round-title', `小组赛 · ${groupLabel(gs.groupIndex)} 组`));
+  head.appendChild(
+    el(
+      'div',
+      'round-sub num',
+      `第 ${gs.groupIndex + 1}/${gs.groups.length} 组 · 选出更喜欢的 ${GROUP_QUALIFIERS_PER_GROUP} 位直通`,
+    ),
+  );
+  const bar = el('div', 'round-bar');
+  const fill = el('i');
+  fill.style.width = `${(gs.groupIndex / gs.groups.length) * 100}%`;
+  bar.appendChild(fill);
+  head.appendChild(bar);
+  main.appendChild(head);
+
+  const grid = el('div', 'grid group-grid');
+  for (const id of group) {
+    const c = get(id);
+    if (!c) continue;
+    const card = createCard(c, {
+      showCategory: true,
+      onSelect: (x) => {
+        if (app.groupPicked.has(x.id)) {
+          app.groupPicked.delete(x.id);
+        } else if (app.groupPicked.size < GROUP_QUALIFIERS_PER_GROUP) {
+          app.groupPicked.add(x.id);
+        } else {
+          showToast(`最多选 ${GROUP_QUALIFIERS_PER_GROUP} 位，先取消一位再选新的`);
+          return;
+        }
+        card.classList.toggle('is-picked', app.groupPicked.has(x.id));
+        count.textContent = `已选 ${app.groupPicked.size} / ${GROUP_QUALIFIERS_PER_GROUP}`;
+        confirmBtn.disabled = app.groupPicked.size !== GROUP_QUALIFIERS_PER_GROUP;
+      },
+    });
+    card.classList.toggle('is-picked', app.groupPicked.has(id));
+    grid.appendChild(card);
+  }
+  main.appendChild(grid);
+
+  const barWrap = el('div', 'confirm-bar');
+  const count = el(
+    'span',
+    'pick-count',
+    `已选 ${app.groupPicked.size} / ${GROUP_QUALIFIERS_PER_GROUP}`,
+  );
+  const confirmBtn = el('button', 'btn btn-confirm', '确认晋级');
+  confirmBtn.disabled = app.groupPicked.size !== GROUP_QUALIFIERS_PER_GROUP;
+  confirmBtn.addEventListener('click', () => {
+    confirmGroup(gs, [...app.groupPicked]);
+    app.groupPicked = new Set();
+    persistCup();
+    render();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+  barWrap.append(count, confirmBtn);
+  main.appendChild(barWrap);
+}
+
+/** 小组赛 10 组全部选完后调用：算出复活赛要捞回几人，进复活赛或直接进淘汰赛 */
+function finishGroupStage(): void {
+  const gs = app.group;
+  if (!gs) {
+    go('home');
+    return;
+  }
+
+  const knockoutSize = nextPowerOfTwo(gs.qualifiers.length);
+  const reviveTarget = knockoutSize - gs.qualifiers.length;
+
+  if (reviveTarget <= 0) {
+    startKnockout(knockoutSize);
+    return;
+  }
+
+  app.redemption = createRedemption(gs.losers, reviveTarget);
+  app.picked = null;
+  if (isRedemptionDone(app.redemption)) {
+    // 极端情况：复活赛无需任何真实对战（losers 数量恰好等于 reviveTarget），
+    // 全员直接轮空复活，跳过复活赛投票页
+    startKnockout(knockoutSize);
+    return;
+  }
+  go('redemption');
+}
+
+/** 复活赛投票页：和 viewMatch 一样是两两对战，只是数据源换成复活赛的一轮对阵表 */
+function viewRedemption(main: HTMLElement): void {
+  const r = app.redemption;
+  if (!r) return go('home');
+  if (isRedemptionDone(r)) {
+    const gs = app.group;
+    const knockoutSize = nextPowerOfTwo((gs?.qualifiers.length ?? 0) + r.revived.length);
+    startKnockout(knockoutSize);
+    return;
+  }
+
+  const pair = currentRedemptionPair(r);
+  if (!pair) return go('home');
+
+  const a = get(pair[0]);
+  const b = get(pair[1]);
+  if (!a || !b) {
+    showToast('选手数据缺失，已重置赛事');
+    app.group = null;
+    app.redemption = null;
+    return go('home');
+  }
+
+  const head = el('div', 'round-head');
+  head.appendChild(el('h2', 'round-title', '复活赛 · 遗珠再战'));
+  const idx = playableIndex(r);
+  const cnt = playableCount(r);
+  head.appendChild(el('div', 'round-sub num', `第 ${idx}/${cnt} 场 · 选出 1 位复活`));
+  const bar = el('div', 'round-bar');
+  const fill = el('i');
+  fill.style.width = `${cnt ? ((idx - 1) / cnt) * 100 : 0}%`;
+  bar.appendChild(fill);
+  head.appendChild(bar);
+  main.appendChild(head);
+
+  const match = el('div', 'match');
+  const cards = new Map<string, HTMLElement>();
+
+  const onSelect = (c: Contestant): void => {
+    app.picked = app.picked === c.id ? null : c.id;
+    for (const [id, node] of cards) node.classList.toggle('is-picked', app.picked === id);
+    confirmBtn.disabled = app.picked === null;
+  };
+
+  for (const c of [a, b]) {
+    const card = createCard(c, { showCategory: true, onSelect });
+    card.classList.toggle('is-picked', app.picked === c.id);
+    cards.set(c.id, card);
+  }
+
+  match.appendChild(cards.get(a.id)!);
+  match.appendChild(el('div', 'vs', 'VS'));
+  match.appendChild(cards.get(b.id)!);
+  main.appendChild(match);
+
+  const barWrap = el('div', 'confirm-bar');
+  const confirmBtn = el('button', 'btn btn-confirm', '确认复活');
+  confirmBtn.disabled = app.picked === null;
+  confirmBtn.addEventListener('click', () => {
+    if (!app.picked) {
+      showToast('先选一位再确认');
+      return;
+    }
+    stopActiveClip();
+    pickRedemptionWinner(r, app.picked);
+    app.picked = null;
+    persistCup();
+    render();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+  barWrap.appendChild(confirmBtn);
+  main.appendChild(barWrap);
+}
+
+/** 小组赛直通者 + 复活赛复活者 拼成完整名单，交给现有淘汰赛引擎原样打完全程 */
+function startKnockout(size: number): void {
+  const gs = app.group;
+  const revived = app.redemption?.revived ?? [];
+  const ids = [...(gs?.qualifiers ?? []), ...revived];
+  const s = createTournament(ids, ids.length || size, null);
+  app.state = s;
+  app.group = null;
+  app.redemption = null;
+  app.picked = null;
+  startPreload(s);
 }
 
 /* ------------------------------------------------------------------ */
@@ -540,6 +965,7 @@ function viewMatch(main: HTMLElement): void {
     stopActiveClip();
     pickWinner(s, app.picked);
     app.picked = null;
+    persistCup();
 
     if (s.championId) {
       go('champion');
@@ -774,6 +1200,15 @@ function render(): void {
     case 'library':
       viewLibrary(main);
       break;
+    case 'groupDraw':
+      viewGroupDraw(main);
+      break;
+    case 'group':
+      viewGroup(main);
+      break;
+    case 'redemption':
+      viewRedemption(main);
+      break;
   }
   shell.appendChild(main);
   root.appendChild(shell);
@@ -797,6 +1232,14 @@ async function boot(): Promise<void> {
   if (!contestants.length) {
     root.innerHTML =
       '<div class="gate"><div class="gate-title">选手库是空的</div><div class="gate-sub">往 public/data/contestants.json 里加选手</div></div>';
+    return;
+  }
+
+  // 有未完成的赛事存档（普通淘汰赛或小组赛世界杯模式的任一阶段）就直接恢复
+  // 到那一步，跳过开始页——刷新页面/关掉标签页不该让整场比赛清零
+  if (restoreCup()) {
+    render();
+    setBgmMuted(isMuted());
     return;
   }
 
