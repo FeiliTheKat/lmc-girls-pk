@@ -31,7 +31,6 @@
 import type { Contestant } from './types';
 import { assetUrl } from './data';
 import { preloader } from './preload';
-import { duckBgm, unduckBgm } from './bgm';
 
 const PLAY_ICON =
   '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
@@ -76,32 +75,8 @@ function gradientFor(id: string): string {
   return `linear-gradient(135deg, hsl(${h} 58% 34%), hsl(${h2} 52% 12%))`;
 }
 
-const MUTE_KEY = 'mgc:muted';
-
-let muted = (() => {
-  try {
-    return localStorage.getItem(MUTE_KEY) === '1';
-  } catch {
-    return false;
-  }
-})();
-
 /** 当前正在出声播放"正片"的卡片，全站唯一 */
 let active: { video: HTMLVideoElement; viewBtn: HTMLButtonElement | null } | null = null;
-
-export function isMuted(): boolean {
-  return muted;
-}
-
-export function setMuted(v: boolean): void {
-  muted = v;
-  try {
-    localStorage.setItem(MUTE_KEY, v ? '1' : '0');
-  } catch {
-    /* ignore */
-  }
-  if (active) active.video.muted = v;
-}
 
 function resetViewBtn(viewBtn: HTMLButtonElement | null): void {
   if (!viewBtn) return;
@@ -124,7 +99,6 @@ export function stopActiveClip(): void {
   video.muted = true;
   resetViewBtn(viewBtn);
   preloader.resumeBackground();
-  unduckBgm();
 
   if (HOVER_PREVIEW_ENABLED && video.matches(':hover')) {
     video.currentTime = 0;
@@ -156,11 +130,11 @@ function toggleActive(c: Contestant, video: HTMLVideoElement, viewBtn: HTMLButto
 
   // 让出带宽给这条流，别和后台预取抢
   preloader.pauseBackground();
-  // 视频有自己的声音，闪避掉背景音乐，不叠两条音轨
-  duckBgm();
 
   video.loop = false;
-  video.muted = muted;
+  // 选手视频片段一律带声播放，不受任何全局静音状态影响——静音/暂停/切歌
+  // 那一套（bgm.ts）现在只管 BGM 自己，见 bgm.ts 头部注释
+  video.muted = false;
   if (!video.src) video.src = assetUrl(c.clip!);
   video.currentTime = 0;
 

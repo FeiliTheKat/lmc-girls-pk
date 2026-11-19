@@ -178,6 +178,21 @@ video {
   color: var(--accent);
 }
 
+/* 顶栏迷你 BGM 播放器：暂停/播放 + 切歌两颗图标按钮，紧挨着静音开关，同一组
+   "声音相关"控件放在一起 */
+.bgm-player {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.bgm-pause-btn,
+.bgm-skip-btn {
+  padding: 8px 12px;
+  font-size: 14px;
+  line-height: 1;
+}
+
 .main {
   flex: 1;
   width: 100%;
@@ -457,6 +472,107 @@ video {
   font-weight: 400;
   color: var(--text-secondary);
   margin-top: var(--sp-2);
+}
+
+/* ---------------- 分隔线（首页「随机抽取/自选参赛」和「小组赛世界杯模式」之间） ---------------- */
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  max-width: var(--w-prose);
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--glass-border);
+}
+
+/* ---------------- 「推荐」角标（小组赛世界杯模式 CTA） ---------------- */
+
+.cta-badge-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.cta-badge {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  z-index: 1;
+  background: var(--accent);
+  color: var(--text-on-accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 3px 9px;
+  border-radius: var(--r-pill);
+  box-shadow: 0 4px 12px var(--accent-glow);
+  pointer-events: none;
+}
+
+/* 静态的一圈辉光（不带呼吸动效——那是 .splash-ready 用来说"现在点我"的，
+   这里只是"推荐选这个"，不需要抢注意力到那个程度） */
+.btn-recommended {
+  box-shadow: 0 8px 28px var(--accent-glow);
+}
+.btn-recommended:disabled {
+  box-shadow: none;
+}
+
+/* ---------------- 分组抽签结果 ---------------- */
+
+.group-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--sp-4);
+  margin: var(--sp-6) 0 var(--sp-8);
+}
+
+.group-box {
+  background: var(--glass-fill);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-md);
+  padding: var(--sp-4);
+}
+
+.group-box-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+  margin: 0 0 var(--sp-2);
+}
+
+.group-box-names {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.group-box-name {
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+/* 小组赛投票页：固定 4 人一组，2x2 排列比自适应多列更整齐，也让卡片能比
+   自适应网格里的更大一些——毕竟这一屏只有 4 张卡，不用像选手库/自选参赛
+   那样为几十张卡做流式换行 */
+/* .grid.group-grid（复合选择器）而不是单独 .group-grid——.grid 自己的
+   grid-template-columns 定义在样式表更靠后的位置，类选择器优先级打平时
+   靠后的规则会赢，单独 .group-grid 会被 .grid 覆盖掉 */
+.grid.group-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: 520px;
+  margin: 0 auto;
 }
 
 /* ---------------- 选手卡片 ---------------- */
@@ -834,7 +950,9 @@ button.card-name:focus-visible {
   bottom: 0;
   z-index: var(--z-sticky);
   display: flex;
+  align-items: center;
   justify-content: center;
+  gap: var(--sp-6);
   padding: var(--sp-4) 0 calc(var(--sp-4) + env(safe-area-inset-bottom));
   margin-top: var(--sp-5);
   /* 不给自己的背景色——就是外层页面背景，不需要在紫色渐变上再凿一块
